@@ -1,7 +1,7 @@
 [project]
-name = "20251207093313"
+name = "langgraph-learning"
 version = "0.1.0"
-description = "Add your description here"
+description = "10个示例学习LangGraph"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
