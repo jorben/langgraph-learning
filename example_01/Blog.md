@@ -1,6 +1,6 @@
 # LangGraph 入门实战：用流水线思维打造 AI 文章生成器
 
-> 本文将手把手带你理解 LangGraph 的核心概念，通过一个简单的文章生成器示例，让你轻松掌握如何用"流水线"的方式组织 AI 任务。
+本文将手把手带你理解 LangGraph 的核心概念，通过一个简单的文章生成器示例，让你轻松掌握如何用"流水线"的方式组织 AI 任务。我们将从基础概念讲起，逐步构建一个完整的文章生成工作流，涵盖状态管理、节点定义、流程编排等关键环节，最终实现一个能自动完成从标题输入到内容润色的全流程系统。
 
 ## 🎯 我们要解决什么问题？
 
@@ -59,6 +59,7 @@ class ArticleState(TypedDict):
 ```
 
 **关键点：**
+
 - 使用 `TypedDict` 定义状态结构，清晰且有类型提示
 - 每个字段记录一个阶段的数据
 - 状态会在各个节点间自动传递
@@ -74,12 +75,12 @@ def input_title(state: ArticleState) -> ArticleState:
     """接收并确认文章标题"""
     print("\n=== 第1步：标题确认 ===")
     title = state.get("title", "")
-    
+
     if not title:
         raise ValueError("标题不能为空")
-    
+
     print(f"标题: {title}")
-    
+
     return {
         **state,  # 保留原有状态
         "current_step": "title_confirmed"  # 更新当前步骤
@@ -87,6 +88,7 @@ def input_title(state: ArticleState) -> ArticleState:
 ```
 
 **要点：**
+
 - 函数接收 `state`，返回更新后的 `state`
 - `{**state, "key": "value"}` 是 Python 字典更新的常用写法
 - 只更新需要变化的字段，其他字段保持不变
@@ -98,7 +100,7 @@ def generate_outline(state: ArticleState) -> ArticleState:
     """基于标题生成文章大纲"""
     print("\n=== 第2步：大纲生成 ===")
     title = state["title"]  # 从状态中获取标题
-    
+
     # 构建提示词
     prompt = f"""请为以下标题生成一个文章大纲：
 
@@ -108,13 +110,13 @@ def generate_outline(state: ArticleState) -> ArticleState:
 1. 包含3-5个主要章节
 2. 每个章节有简短的描述
 3. 逻辑清晰，结构合理"""
-    
+
     # 调用 LLM 生成大纲
     response = llm.invoke(prompt)
     outline = response.content
-    
+
     print(outline)
-    
+
     return {
         **state,
         "outline": outline,  # 保存大纲
@@ -123,6 +125,7 @@ def generate_outline(state: ArticleState) -> ArticleState:
 ```
 
 **核心逻辑：**
+
 1. 从 `state` 中读取上一步的输出（标题）
 2. 构建 Prompt 提示词
 3. 调用 AI 模型（LLM）生成内容
@@ -155,25 +158,25 @@ from langgraph.graph import StateGraph, END
 
 def create_article_workflow():
     """创建文章生成工作流"""
-    
+
     # 1. 创建状态图
     workflow = StateGraph(ArticleState)
-    
+
     # 2. 添加节点
     workflow.add_node("input_title", input_title)
     workflow.add_node("generate_outline", generate_outline)
     workflow.add_node("write_content", write_content)
     workflow.add_node("polish_content", polish_content)
-    
+
     # 3. 设置入口点（从哪个节点开始）
     workflow.set_entry_point("input_title")
-    
+
     # 4. 添加边，定义执行顺序
     workflow.add_edge("input_title", "generate_outline")      # 标题 → 大纲
     workflow.add_edge("generate_outline", "write_content")    # 大纲 → 正文
     workflow.add_edge("write_content", "polish_content")      # 正文 → 润色
     workflow.add_edge("polish_content", END)                  # 润色 → 结束
-    
+
     # 5. 编译图
     return workflow.compile()
 ```
@@ -193,7 +196,7 @@ def create_article_workflow():
 def main():
     # 创建工作流
     app = create_article_workflow()
-    
+
     # 准备初始状态
     initial_state = {
         "title": "人工智能在医疗领域的应用",
@@ -202,10 +205,10 @@ def main():
         "polished_content": "",
         "current_step": "initial"
     }
-    
+
     # 执行工作流
     final_state = app.invoke(initial_state)
-    
+
     # 输出最终结果
     print(final_state["polished_content"])
 ```
@@ -268,21 +271,25 @@ polish_content(state) → 返回最终 state
 ## 💡 核心概念总结
 
 ### 1. **状态（State）**
+
 - 就像一个"旅行背包"，装着整个流程需要的数据
 - 每个节点可以读取状态、修改状态
 - 状态在节点间自动传递
 
 ### 2. **节点（Node）**
+
 - 每个节点是一个 Python 函数
 - 函数签名：`def node_func(state: State) -> State`
 - 职责单一：只做一件事
 
 ### 3. **边（Edge）**
+
 - 定义节点的执行顺序
 - `add_edge(A, B)` 表示"A 之后执行 B"
 - 本例是简单的顺序边，后续可以学习条件边（if-else）
 
 ### 4. **工作流图（Graph）**
+
 - 节点 + 边 = 图
 - 通过 `compile()` 编译成可执行的应用
 - 通过 `invoke()` 运行
@@ -290,10 +297,13 @@ polish_content(state) → 返回最终 state
 ## 🚀 为什么这样设计好？
 
 ### ✅ 代码结构清晰
+
 每个节点职责单一，易于理解和测试。如果某个步骤出错，一眼就能定位到具体节点。
 
 ### ✅ 易于扩展
+
 想增加一个"质量检查"步骤？只需：
+
 ```python
 workflow.add_node("quality_check", quality_check_func)
 workflow.add_edge("polish_content", "quality_check")
@@ -301,10 +311,13 @@ workflow.add_edge("quality_check", END)
 ```
 
 ### ✅ 可维护性高
+
 需求变更时，只需调整对应节点或边，不会影响整体结构。
 
 ### ✅ 为复杂场景打基础
+
 本例是简单的顺序流，但 LangGraph 还支持：
+
 - **条件分支**：根据状态决定走哪条路径
 - **循环**：某个步骤可以重复执行
 - **并行执行**：多个节点同时运行
@@ -398,6 +411,7 @@ LangGraph 让我们能够用**结构化、可视化**的方式组织 AI 工作�
 **完整代码**：`example_01/article_generator.py`
 
 **运行方式**：
+
 ```bash
 cd example_01
 ./run.sh
