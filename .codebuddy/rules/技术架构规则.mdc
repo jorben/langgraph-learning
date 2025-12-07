@@ -1,0 +1,14 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2025-12-07T02:09:16.841Z
+provider: 
+---
+
+# 技术规范
+
+## 后端规范
+1. 技术栈：Python + LangGraph
+2. 依赖管理：uv ，使用项目根目录下的环境和pyproject.toml
+3. 环境变量：根目录下的.env 包括OPENAI_API_KEY、OPEAI_BASE_URL、MODEL_NAME 等
